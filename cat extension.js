@@ -36,21 +36,21 @@
             if (data.salle === this._salle) {
               this._dernierMessage = data.contenu || '';
               this._dernierType = data.type || '';
-              console.log(`📩 Reçu de ${data.salle}: ${data.contenu} (type: ${data.type})`);
+              console.log(`📩 Reçu de ${data.salle} :`, data.contenu);
             }
           } catch (e) {
-            console.warn('⚠️ Message non JSON :', event.data);
+            console.warn('⚠️ Message non lisible :', event.data);
           }
         };
       } catch (e) {
-        console.warn('⚠️ Problème de connexion :', e);
+        console.warn('⚠️ Erreur lors de la connexion :', e);
       }
     }
 
     getInfo() {
       return {
         id: 'chatonmultiverse',
-        name: 'Chaton Multiverse v3',
+        name: 'Chaton Multiverse v3.1',
         color1: '#ff79c6',
         blocks: [
           {
@@ -97,6 +97,11 @@
             opcode: 'estConnecte',
             blockType: Scratch.BlockType.BOOLEAN,
             text: 'connecté au serveur ?'
+          },
+          {
+            opcode: 'lireServeur',
+            blockType: Scratch.BlockType.REPORTER,
+            text: 'URL du serveur actuel'
           }
         ]
       };
@@ -104,7 +109,7 @@
 
     definirServeur(args) {
       this._serveur = args.URL || 'wss://carpal-ionian-leotard.glitch.me';
-      console.log('🌐 Nouveau serveur :', this._serveur);
+      console.log('🌐 Serveur défini :', this._serveur);
       this._connecte = false;
       if (this.socket) {
         this.socket.close();
@@ -143,6 +148,10 @@
 
     estConnecte() {
       return this._connecte;
+    }
+
+    lireServeur() {
+      return this._serveur;
     }
   }
 
