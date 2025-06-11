@@ -58,7 +58,7 @@
             blockType: Scratch.BlockType.COMMAND,
             text: 'définir le serveur à [URL]',
             arguments: {
-              URL: { type: Scratch.ArgumentType.STRING, defaultValue: 'wss://mon-serveur.glitch.me' }
+              URL: { type: Scratch.ArgumentType.STRING, defaultValue: 'wss://carpal-ionian-leotard.glitch.me' }
             }
           },
           {
