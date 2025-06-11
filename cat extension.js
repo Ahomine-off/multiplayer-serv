@@ -1,203 +1,164 @@
 (function(Scratch) {
   'use strict';
 
-  const locale = (Scratch.locale || '').toLowerCase();
-  const isFrench = locale.startsWith('fr');
-
-  const blocs = {
-    definirServeur: {
-      en: 'set server to [URL]',
-      fr: 'définir le serveur à [URL]'
-    },
-    definirSalle: {
-      en: 'set room to [ROOM]',
-      fr: 'définir la salle à [SALLE]'
-    },
-    envoyerMessage: {
-      en: 'send [TEXT] (type [TYPE])',
-      fr: 'envoyer [TEXTE] (type [TYPE])'
-    },
-    dernierMessage: {
-      en: 'last received message',
-      fr: 'dernier message reçu'
-    },
-    dernierType: {
-      en: 'type of last message',
-      fr: 'type du dernier message'
-    },
-    lireSalle: {
-      en: 'current room',
-      fr: 'salle actuelle'
-    },
-    estConnecte: {
-      en: 'connected to server?',
-      fr: 'connecté au serveur ?'
-    },
-    lireServeur: {
-      en: 'current server URL',
-      fr: 'URL du serveur actuel'
-    }
-  };
-
-  class ChatonMultiverse {
-    constructor() {
+  // ✨ Base commune pour les deux extensions
+  class MultiverseBase {
+    constructor(lang, nom) {
+      this.nom = nom;
+      this.langue = lang;
+      this.id = lang === 'fr' ? 'chatonmulti' : 'kittenmulti';
       this._serveur = 'wss://carpal-ionian-leotard.glitch.me';
       this._salle = 'default';
-      this._dernierMessage = '';
-      this._dernierType = '';
+      this._msg = '';
+      this._type = '';
       this._connecte = false;
+
       this._connecter();
     }
 
     _connecter() {
       try {
         this.socket = new WebSocket(this._serveur);
-
-        this.socket.onopen = () => {
-          this._connecte = true;
-          console.log('🟢 Connecté à', this._serveur);
-        };
-
-        this.socket.onclose = () => {
-          this._connecte = false;
-          console.warn('🔌 Déconnecté de', this._serveur);
-        };
-
-        this.socket.onerror = (err) => {
-          console.warn('❌ Erreur WebSocket :', err);
-        };
-
+        this.socket.onopen = () => { this._connecte = true; };
+        this.socket.onclose = () => { this._connecte = false; };
+        this.socket.onerror = () => { this._connecte = false; };
         this.socket.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data);
             if (data.salle === this._salle) {
-              this._dernierMessage = data.contenu || '';
-              this._dernierType = data.type || '';
-              console.log(`📩 Reçu de ${data.salle} :`, data.contenu);
+              this._msg = data.contenu || '';
+              this._type = data.type || '';
             }
-          } catch (e) {
-            console.warn('⚠️ Message non lisible :', event.data);
-          }
+          } catch {}
         };
-      } catch (e) {
-        console.warn('⚠️ Erreur lors de la connexion :', e);
-      }
+      } catch {}
     }
 
     getInfo() {
+      const fr = {
+        name: 'Chaton Multiverse',
+        server: 'définir le serveur à [URL]',
+        room: 'définir la salle à [SALLE]',
+        send: 'envoyer [TEXTE] (type [TYPE])',
+        msg: 'dernier message reçu',
+        type: 'type du dernier message',
+        salle: 'valeur de la salle',
+        serv: 'URL du serveur actuel',
+        online: 'connecté au serveur ?'
+      };
+      const en = {
+        name: 'Kitten Multiverse',
+        server: 'set server to [URL]',
+        room: 'set room to [ROOM]',
+        send: 'send [TEXT] (type [TYPE])',
+        msg: 'last received message',
+        type: 'type of last message',
+        salle: 'current room',
+        serv: 'current server URL',
+        online: 'connected to server?'
+      };
+
+      const t = this.langue === 'fr' ? fr : en;
+
       return {
-        id: 'chatonmultiverse',
-        name: isFrench ? 'Chaton Multiverse' : 'Chaton Multiverse',
-        color1: '#ff79c6',
+        id: this.id,
+        name: t.name,
+        color1: this.langue === 'fr' ? '#ff69b4' : '#87ceeb',
         blocks: [
           {
-            opcode: 'definirServeur',
+            opcode: 'setServer',
             blockType: Scratch.BlockType.COMMAND,
-            text: blocs.definirServeur[isFrench ? 'fr' : 'en'],
+            text: t.server,
             arguments: {
-              URL: {
-                type: Scratch.ArgumentType.STRING,
-                defaultValue: this._serveur
-              }
+              URL: { type: Scratch.ArgumentType.STRING, defaultValue: this._serveur }
             }
           },
           {
-            opcode: 'definirSalle',
+            opcode: 'setRoom',
             blockType: Scratch.BlockType.COMMAND,
-            text: blocs.definirSalle[isFrench ? 'fr' : 'en'],
+            text: t.room,
             arguments: {
-              ROOM: {
-                type: Scratch.ArgumentType.STRING,
-                defaultValue: this._salle
-              }
+              SALLE: { type: Scratch.ArgumentType.STRING, defaultValue: this._salle }
             }
           },
           {
-            opcode: 'envoyerMessage',
+            opcode: 'sendMessage',
             blockType: Scratch.BlockType.COMMAND,
-            text: blocs.envoyerMessage[isFrench ? 'fr' : 'en'],
+            text: t.send,
             arguments: {
-              TEXTE: {
-                type: Scratch.ArgumentType.STRING,
-                defaultValue: isFrench ? 'miaw' : 'miaw'
-              },
-              TYPE: {
-                type: Scratch.ArgumentType.STRING,
-                defaultValue: isFrench ? 'chat' : 'chat'
-              }
+              TEXTE: { type: Scratch.ArgumentType.STRING, defaultValue: 'miaw' },
+              TYPE: { type: Scratch.ArgumentType.STRING, defaultValue: 'chat' }
             }
           },
           {
-            opcode: 'lireDernierMessage',
+            opcode: 'getMessage',
             blockType: Scratch.BlockType.REPORTER,
-            text: blocs.dernierMessage[isFrench ? 'fr' : 'en']
+            text: t.msg
           },
           {
-            opcode: 'lireTypeDernierMessage',
+            opcode: 'getType',
             blockType: Scratch.BlockType.REPORTER,
-            text: blocs.dernierType[isFrench ? 'fr' : 'en']
+            text: t.type
           },
           {
-            opcode: 'lireSalle',
+            opcode: 'getRoom',
             blockType: Scratch.BlockType.REPORTER,
-            text: blocs.lireSalle[isFrench ? 'fr' : 'en']
+            text: t.salle
           },
           {
-            opcode: 'estConnecte',
+            opcode: 'getServerURL',
+            blockType: Scratch.BlockType.REPORTER,
+            text: t.serv
+          },
+          {
+            opcode: 'isConnected',
             blockType: Scratch.BlockType.BOOLEAN,
-            text: blocs.estConnecte[isFrench ? 'fr' : 'en']
-          },
-          {
-            opcode: 'lireServeur',
-            blockType: Scratch.BlockType.REPORTER,
-            text: blocs.lireServeur[isFrench ? 'fr' : 'en']
+            text: t.online
           }
         ]
       };
     }
 
-    definirServeur(args) {
+    setServer(args) {
       this._serveur = args.URL || this._serveur;
       if (this.socket) this.socket.close();
       this._connecte = false;
       this._connecter();
     }
 
-    definirSalle(args) {
-      this._salle = args.ROOM || 'default';
+    setRoom(args) {
+      this._salle = args.SALLE || 'default';
     }
 
-    envoyerMessage(args) {
-      if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-        const paquet = {
-          salle: this._salle,
-          type: args.TYPE,
-          contenu: args.TEXTE
-        };
-        this.socket.send(JSON.stringify(paquet));
+    sendMessage(args) {
+      if (this.socket?.readyState === WebSocket.OPEN) {
+        const packet = { salle: this._salle, type: args.TYPE, contenu: args.TEXTE };
+        this.socket.send(JSON.stringify(packet));
       }
     }
 
-    lireDernierMessage() {
-      return this._dernierMessage;
+    getMessage() {
+      return this._msg;
     }
 
-    lireTypeDernierMessage() {
-      return this._dernierType;
+    getType() {
+      return this._type;
     }
 
-    lireSalle() {
+    getRoom() {
       return this._salle;
     }
 
-    estConnecte() {
-      return this._connecte;
+    getServerURL() {
+      return this._serveur;
     }
 
-    lireServeur() {
-      return this._serveur;
+    isConnected() {
+      return this._connecte;
     }
   }
 
-  Scratch.extensions.register(new ChatonMultiverse());
+  // Enregistrement des deux extensions
+  Scratch.extensions.register(new MultiverseBase('fr', 'Chaton Multiverse'));
+  Scratch.extensions.register(new MultiverseBase('en', 'Kitten Multiverse'));
 })(Scratch);
