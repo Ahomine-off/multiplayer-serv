@@ -1,6 +1,44 @@
 (function(Scratch) {
   'use strict';
 
+  const locale = (Scratch.locale || '').toLowerCase();
+  const isFrench = locale.startsWith('fr');
+
+  const blocs = {
+    definirServeur: {
+      en: 'set server to [URL]',
+      fr: 'définir le serveur à [URL]'
+    },
+    definirSalle: {
+      en: 'set room to [ROOM]',
+      fr: 'définir la salle à [SALLE]'
+    },
+    envoyerMessage: {
+      en: 'send [TEXT] (type [TYPE])',
+      fr: 'envoyer [TEXTE] (type [TYPE])'
+    },
+    dernierMessage: {
+      en: 'last received message',
+      fr: 'dernier message reçu'
+    },
+    dernierType: {
+      en: 'type of last message',
+      fr: 'type du dernier message'
+    },
+    lireSalle: {
+      en: 'current room',
+      fr: 'salle actuelle'
+    },
+    estConnecte: {
+      en: 'connected to server?',
+      fr: 'connecté au serveur ?'
+    },
+    lireServeur: {
+      en: 'current server URL',
+      fr: 'URL du serveur actuel'
+    }
+  };
+
   class ChatonMultiverse {
     constructor() {
       this._serveur = 'wss://carpal-ionian-leotard.glitch.me';
@@ -8,7 +46,6 @@
       this._dernierMessage = '';
       this._dernierType = '';
       this._connecte = false;
-
       this._connecter();
     }
 
@@ -50,75 +87,84 @@
     getInfo() {
       return {
         id: 'chatonmultiverse',
-        name: 'Chaton Multiverse v3.1',
+        name: isFrench ? 'Chaton Multiverse' : 'Chaton Multiverse',
         color1: '#ff79c6',
         blocks: [
           {
             opcode: 'definirServeur',
             blockType: Scratch.BlockType.COMMAND,
-            text: 'définir le serveur à [URL]',
+            text: blocs.definirServeur[isFrench ? 'fr' : 'en'],
             arguments: {
-              URL: { type: Scratch.ArgumentType.STRING, defaultValue: 'wss://carpal-ionian-leotard.glitch.me' }
+              URL: {
+                type: Scratch.ArgumentType.STRING,
+                defaultValue: this._serveur
+              }
             }
           },
           {
             opcode: 'definirSalle',
             blockType: Scratch.BlockType.COMMAND,
-            text: 'définir la salle à [SALLE]',
+            text: blocs.definirSalle[isFrench ? 'fr' : 'en'],
             arguments: {
-              SALLE: { type: Scratch.ArgumentType.STRING, defaultValue: 'default' }
+              ROOM: {
+                type: Scratch.ArgumentType.STRING,
+                defaultValue: this._salle
+              }
             }
           },
           {
             opcode: 'envoyerMessage',
             blockType: Scratch.BlockType.COMMAND,
-            text: 'envoyer [TEXTE] (type [TYPE])',
+            text: blocs.envoyerMessage[isFrench ? 'fr' : 'en'],
             arguments: {
-              TEXTE: { type: Scratch.ArgumentType.STRING, defaultValue: 'miaw' },
-              TYPE: { type: Scratch.ArgumentType.STRING, defaultValue: 'chat' }
+              TEXTE: {
+                type: Scratch.ArgumentType.STRING,
+                defaultValue: isFrench ? 'miaw' : 'miaw'
+              },
+              TYPE: {
+                type: Scratch.ArgumentType.STRING,
+                defaultValue: isFrench ? 'chat' : 'chat'
+              }
             }
           },
           {
             opcode: 'lireDernierMessage',
             blockType: Scratch.BlockType.REPORTER,
-            text: 'dernier message reçu'
+            text: blocs.dernierMessage[isFrench ? 'fr' : 'en']
           },
           {
             opcode: 'lireTypeDernierMessage',
             blockType: Scratch.BlockType.REPORTER,
-            text: 'type du dernier message'
+            text: blocs.dernierType[isFrench ? 'fr' : 'en']
           },
           {
             opcode: 'lireSalle',
             blockType: Scratch.BlockType.REPORTER,
-            text: 'valeur de la salle'
+            text: blocs.lireSalle[isFrench ? 'fr' : 'en']
           },
           {
             opcode: 'estConnecte',
             blockType: Scratch.BlockType.BOOLEAN,
-            text: 'connecté au serveur ?'
+            text: blocs.estConnecte[isFrench ? 'fr' : 'en']
           },
           {
             opcode: 'lireServeur',
             blockType: Scratch.BlockType.REPORTER,
-            text: 'URL du serveur actuel'
+            text: blocs.lireServeur[isFrench ? 'fr' : 'en']
           }
         ]
       };
     }
 
     definirServeur(args) {
-      this._serveur = args.URL || 'wss://carpal-ionian-leotard.glitch.me';
-      console.log('🌐 Serveur défini :', this._serveur);
+      this._serveur = args.URL || this._serveur;
+      if (this.socket) this.socket.close();
       this._connecte = false;
-      if (this.socket) {
-        this.socket.close();
-      }
       this._connecter();
     }
 
     definirSalle(args) {
-      this._salle = args.SALLE || 'default';
+      this._salle = args.ROOM || 'default';
     }
 
     envoyerMessage(args) {
@@ -129,8 +175,6 @@
           contenu: args.TEXTE
         };
         this.socket.send(JSON.stringify(paquet));
-      } else {
-        console.warn('⚠️ Pas connecté au serveur WebSocket.');
       }
     }
 
